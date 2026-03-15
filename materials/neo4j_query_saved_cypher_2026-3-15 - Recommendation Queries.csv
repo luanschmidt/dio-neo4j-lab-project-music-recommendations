@@ -1,0 +1,50 @@
+name,description,query,id,parentId,isFolder
+Recommend by Genre and Popularity,,"PROFILE
+
+MATCH (u:User)-[:LISTENED]->(listenedSong:Song)
+WITH DISTINCT u, listenedSong.genre AS userGenre
+LIMIT 20
+MATCH (recommendationSongs:Song)
+WHERE recommendationSongs.genre = userGenre
+  AND recommendationSongs.popularity > 70
+  AND NOT (u)-[:LISTENED]->(recommendationSongs)
+WITH u, collect(DISTINCT recommendationSongs)[0..10] AS topRecommendationSongs
+UNWIND topRecommendationSongs AS finalSongs
+MERGE (finalSongs)-[:RECOMMENDATION_TO]->(u)",0,,false
+Recommended by Favorite Artists and songs Popularity,,"PROFILE
+
+MATCH (u:User)-[:LISTENED]->(listenedSong:Song)
+WITH DISTINCT u, listenedSong.artists AS userFavoriteArtists
+MATCH (recommendationSongs:Song)
+WHERE recommendationSongs.artists = userFavoriteArtists
+  AND recommendationSongs.popularity > 70
+  AND NOT (u)-[:LISTENED]->(recommendationSongs)
+WITH u, collect(DISTINCT recommendationSongs)[0..10] AS topRecommendationSongs
+UNWIND topRecommendationSongs AS finalSongs
+MERGE (finalSongs)-[:RECOMMENDATION_TO]->(u)",1,,false
+"Song recommendation based on favorite artists and popularity, filtering explicits songs",,"PROFILE
+
+MATCH (u:User)-[:LISTENED]->(listenedSong:Song)
+WITH DISTINCT u, listenedSong.artists AS userFavoriteArtists
+MATCH (recommendationSongs:Song)
+WHERE recommendationSongs.artists = userFavoriteArtists
+  AND recommendationSongs.popularity > 50
+  AND recommendationSongs.explicit <> TRUE
+  AND NOT (u)-[:LISTENED]->(recommendationSongs)
+WITH u, collect(DISTINCT recommendationSongs)[0..10] AS topRecommendationSongs
+UNWIND topRecommendationSongs AS finalSongs
+MERGE (finalSongs)-[relCreated:RECOMMENDATION_TO]->(u)
+RETURN finalSongs, relCreated",2,,false
+"Song recommendation by favorite artists album, popularity and without explicity.",,"PROFILE
+
+MATCH (u:User)-[:LISTENED]->(listenedSong:Song)
+WITH DISTINCT u, listenedSong.album AS userFavoriteArtistsAlbum
+MATCH (recommendationSongs:Song)
+WHERE recommendationSongs.album = userFavoriteArtistsAlbum
+  AND recommendationSongs.popularity > 50
+  AND recommendationSongs.explicit <> TRUE
+  AND NOT (u)-[:LISTENED]->(recommendationSongs)
+WITH u, collect(DISTINCT recommendationSongs)[0..2] AS topRecommendationSongs
+UNWIND topRecommendationSongs AS finalSongs
+MERGE (finalSongs)-[relCreated:RECOMMENDATION_TO]->(u)
+RETURN finalSongs, relCreated",3,,false
